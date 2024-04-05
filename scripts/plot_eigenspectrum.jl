@@ -26,11 +26,14 @@ function plot_eigen_spectrum(dir_to_save::String, eigvals::Vector{Float64})
     
     #persist graph if doesn't exist
     if !isfile(full_file_path)
-        #plot styling
-        plt = plot(ploting_axes[1],ploting_axes[2], label=L"{Eig val}_n", legend=false, xscale=:log10, yscale=:log10,alpha=0.2)
-        #linear fit
-        plot!(u -> exp10(params[1] + params[2]*log10(u)),minimum(ploting_axes[1]),maximum(ploting_axes[1]), xscale=:log10,yscale=:log10,lc=:red)
-        
+        # plot styling
+        plt = plot(ploting_axes[1], ploting_axes[2], label=L"ev_n",xscale=:log10, yscale=:log10, alpha=0.2)
+
+       # linear fit
+        x_vals = collect(1:length(eigvals))
+        y_vals = exp10.(params[1] .+ params[2] .* log10.(x_vals))
+        plot!(x_vals, y_vals, label="Linear Fit: beta = $(round(params[2], digits=3)), A = $(round(params[1],digits=3))", lc=:red)
+
         title!("Eigen spectrum plot")
         xlabel!(L"n")
         ylabel!("Eigen spectrum")

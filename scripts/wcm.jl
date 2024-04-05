@@ -24,7 +24,7 @@ function load_data_matrix(file_path::String; normalize=true::Bool)::Matrix{Float
     df = DataFrames.DataFrame(CSV.File(file_path;header=false))
     data = Matrix{Float64}(df)
     if normalize
-        data .-= mean(data, dims=1)
+        data .-= mean(data, dims=2)
     end
 
     return data
