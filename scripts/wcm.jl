@@ -18,6 +18,7 @@ Load data from a CSV file into a matrix and optionally normalize it.
 ```julia
 file_path = "path/to/data.csv"
 load_data_matrix(file_path)
+```
 """
 function load_data_matrix(file_path::String; normalize=true::Bool)::Matrix{Float64}
     df = DataFrames.DataFrame(CSV.File(file_path;header=false))
@@ -44,6 +45,7 @@ Compute the correlation matrix of a given matrix `m`.
 ```julia
 matrix = [1.0 2.0; 3.0 4.0]
 correlation_matrix(matrix)
+```
 """
 function correlation_matrix(m::Matrix{Float64})::Matrix{Float64}
     return Statistics.cor(m)
@@ -64,6 +66,7 @@ Partition the rows of a matrix into equal-sized blocks.
 # Example
 ```julia
 row_partition(10, 3)
+```
 """
 function row_partition(r::Int64,l::Int64)::Vector{Int64}
     row_partition = map(collect(1:div(r,l))) do u 
@@ -94,10 +97,11 @@ Compute the windowed correlation matrix of a matrix `m` with a window size `l`.
 ```julia
 matrix = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
 windowed_correlation_matrix(matrix, 2)
+```
 """
 function windowed_correlation_matrix(m::Matrix{Float64},l::Int64)::Matrix{Float64}
     rem = size(m)[1] % l
-    wcm = zeros(size(cm)...)
+    wcm = zeros(size(m)[2],size(m)[2])
     if rem != 0
         @warn "one of the $(size(m)[1]) sub matrices will be windowed with $rem observations"
     end
@@ -106,9 +110,11 @@ function windowed_correlation_matrix(m::Matrix{Float64},l::Int64)::Matrix{Float6
     for i in eachindex(rp)
         if i == 1
             cm = correlation_matrix(m[1:rp[1],:])
+            @show size(cm)
             wcm .+= cm
         else
             cm = correlation_matrix(m[rp[i-1]:rp[i],:])
+            @show size(cm)
             wcm .+= cm    
         end                 
     end

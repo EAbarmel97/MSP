@@ -1,8 +1,6 @@
 using Plots
 using LaTeXStrings
 
-include("eigen_analysis.jl")
-
 """
     plot_eigen_spectrum(dir_to_save::String, eigvals::Vector{Float64})
 
@@ -15,10 +13,13 @@ Plot the eigenvalue spectrum and its linear fit on a log-log scale and save the 
 # Example
 ```julia
 plot_eigen_spectrum("path/to/save/directory", eigvals)
+```
 """
 function plot_eigen_spectrum(dir_to_save::String, eigvals::Vector{Float64})
     #build x, y axis; y being the eigenspectrum and x it's enumeration
-    ploting_axes = (collect(1:length(eigvals),eigvals))
+    ploting_axes = (collect(1:length(eigvals)),eigvals)
+    
+    full_file_path = joinpath(dir_to_save,"eigen_spectrum_plot.pdf")
 
     #compute linear fit 
     params = compute_linear_fit_params(ploting_axes[2])
@@ -35,6 +36,6 @@ function plot_eigen_spectrum(dir_to_save::String, eigvals::Vector{Float64})
         ylabel!("Eigen spectrum")
         
         #file saving
-        savefig(plt, dir_to_save)
+        savefig(plt, full_file_path)
     end
 end
