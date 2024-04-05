@@ -1,18 +1,19 @@
 using LinearAlgebra
 using DataFrames, CSV
+using Plots 
 using Statistics
 
-function _load_data_matrix(file_path::String,normalize=true::Bool)::Matrix{Float64}
-    df = DataFrames.DataFrame(CSV.File(file_path))
+function _load_data_matrix(file_path::String; normalize=true::Bool)::Matrix{Float64}
+    df = DataFrames.DataFrame(CSV.File(file_path;header=false))
     data = Matrix{Float64}(df)
     if normalize
-       data .- mean.(eachcol(data))
+        data .-= mean(data, dims=1)
     end
 
     return data
 end
 
-function correlation_matrix(m::Matrix{Float64})::Matrix{Float54}
+function correlation_matrix(m::Matrix{Float64})::Matrix{Float64}
     return Statistics.cor(m)
 end
 
@@ -32,22 +33,22 @@ function row_partition(r::Int64,l::Int64)::Vector{Int64}
 end
 
 function _windowed_correlation_matrix(m::Matrix{Float64},l::Int64)::Matrix{Float64}
-    rem = size[1] % l
-    wcm = zeros(size(cm))
+    rem = size(m)[1] % l
+    wcm = zeros(size(cm)...)
     if rem != 0
-        @warn "one of the $(size[1]) sub matrices will be windowend with $rem observations"
+        @warn "one of the $(size(m)[1]) sub matrices will be windowed with $rem observations"
     end
     
-    row_partition = row_partition(size(cm)[1], l)
-    for i in eachindex(row_partition)
-        cm = correlation_matrix(m[row_partition[i]:row_partition[i+1],:])
-        wcm .+= cm 
-
-        if i == length(row_partition)
-           cm = m[row_partition[i-1]:row_partition[i],:]
-        end
-        wcm .+= cm 
+    rp = row_partition(size(m)[1], l)
+    for i in eachindex(rp)
+        if i == 1
+            cm = correlation_matrix(m[1:rp[1],:])
+            wcm .+= cm
+        else
+            cm = correlation_matrix(m[rp[i-1]:rp[i],:])
+            wcm .+= cm    
+        end                 
     end
     
-    return 1/div(r,l) .* wcm
+    return 1/div(size(m)[1],l) .* wcm
 end
