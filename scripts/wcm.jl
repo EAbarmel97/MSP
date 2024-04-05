@@ -2,8 +2,24 @@ using LinearAlgebra
 using DataFrames, CSV
 using Plots 
 using Statistics
+"""
+    load_data_matrix(file_path::String; normalize=true::Bool)::Matrix{Float64}
 
-function _load_data_matrix(file_path::String; normalize=true::Bool)::Matrix{Float64}
+Load data from a CSV file into a matrix and optionally normalize it.
+
+# Arguments
+- `file_path::String`: Path to the CSV file.
+- `normalize::Bool=true`: Whether to normalize the data by subtracting the mean.
+
+# Returns
+- `data::Matrix{Float64}`: Loaded data matrix.
+
+# Example
+```julia
+file_path = "path/to/data.csv"
+load_data_matrix(file_path)
+"""
+function load_data_matrix(file_path::String; normalize=true::Bool)::Matrix{Float64}
     df = DataFrames.DataFrame(CSV.File(file_path;header=false))
     data = Matrix{Float64}(df)
     if normalize
@@ -13,13 +29,43 @@ function _load_data_matrix(file_path::String; normalize=true::Bool)::Matrix{Floa
     return data
 end
 
+"""
+    correlation_matrix(m::Matrix{Float64})::Matrix{Float64}
+
+Compute the correlation matrix of a given matrix `m`.
+
+# Arguments
+- `m::Matrix{Float64}`: Input matrix.
+
+# Returns
+- `correlation::Matrix{Float64}`: Correlation matrix.
+
+# Example
+```julia
+matrix = [1.0 2.0; 3.0 4.0]
+correlation_matrix(matrix)
+"""
 function correlation_matrix(m::Matrix{Float64})::Matrix{Float64}
     return Statistics.cor(m)
 end
 
-function row_partition(r::Int64,l::Int64)::Vector{Int64}
-    number_of_windows = div(r,l)
+"""
+    row_partition(r::Int64, l::Int64)::Vector{Int64}
 
+Partition the rows of a matrix into equal-sized blocks.
+
+# Arguments
+- `r::Int64`: Total number of rows.
+- `l::Int64`: Size of each block.
+
+# Returns
+- `row_partition::Vector{Int64}`: Vector containing the partitioned row indices.
+
+# Example
+```julia
+row_partition(10, 3)
+"""
+function row_partition(r::Int64,l::Int64)::Vector{Int64}
     row_partition = map(collect(1:div(r,l))) do u 
         return l*u
     end
@@ -32,7 +78,24 @@ function row_partition(r::Int64,l::Int64)::Vector{Int64}
     return row_partition
 end
 
-function _windowed_correlation_matrix(m::Matrix{Float64},l::Int64)::Matrix{Float64}
+"""
+    windowed_correlation_matrix(m::Matrix{Float64}, l::Int64)::Matrix{Float64}
+
+Compute the windowed correlation matrix of a matrix `m` with a window size `l`.
+
+# Arguments
+- `m::Matrix{Float64}`: Input matrix.
+- `l::Int64`: Window size.
+
+# Returns
+- `wcm::Matrix{Float64}`: Windowed correlation matrix.
+
+# Example
+```julia
+matrix = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
+windowed_correlation_matrix(matrix, 2)
+"""
+function windowed_correlation_matrix(m::Matrix{Float64},l::Int64)::Matrix{Float64}
     rem = size(m)[1] % l
     wcm = zeros(size(cm)...)
     if rem != 0

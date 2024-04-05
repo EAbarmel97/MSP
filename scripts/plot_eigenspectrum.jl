@@ -3,6 +3,19 @@ using LaTeXStrings
 
 include("eigen_analysis.jl")
 
+"""
+    plot_eigen_spectrum(dir_to_save::String, eigvals::Vector{Float64})
+
+Plot the eigenvalue spectrum and its linear fit on a log-log scale and save the plot to a directory.
+
+# Arguments
+- `dir_to_save::String`: Directory path to save the plot.
+- `eigvals::Vector{Float64}`: Eigenvalues to be plotted.
+
+# Example
+```julia
+plot_eigen_spectrum("path/to/save/directory", eigvals)
+"""
 function plot_eigen_spectrum(dir_to_save::String, eigvals::Vector{Float64})
     #build x, y axis; y being the eigenspectrum and x it's enumeration
     ploting_axes = (collect(1:length(eigvals),eigvals))
