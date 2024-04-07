@@ -5,37 +5,32 @@ include("eigen_analysis.jl")
 include("wcm.jl")
 
 """
-    heatmap_plot(dir_to_save::String, corr_mat::Vector{Float64})
+    heatmap_plot(cm::Matrix{Float64}; dir_to_save="."::String)
 
 Generate a heatmap plot of a correlation matrix and save it to a directory.
 
 # Arguments
-- `dir_to_save::String`: Directory path to save the plot.
 - `cm::Matrix{Float64}`: Correlation matrix.
+- `dir_to_save::String`: Directory path to save the plot. Default is the current directory.
 
 # Example
 ```julia
-heatmap_plot("path/to/save/directory", correlation_matrix)```
+heatmap_plot(correlation_matrix)```
 """
-function heatmap_plot(dir_to_save::String, cm::Matrix{Float64})
-    full_file_path = joinpath(dir_to_save,"heatmap_plot.pdf")
+function heatmap_plot(cm::Matrix{Float64}; dir_to_save="."::String)
+    full_file_path = joinpath(dir_to_save, "heatmap_plot.pdf")
     if !isfile(full_file_path)
-        #plot styling
-            #cols = Symbol.(names(df))
-        (n,m) = size(cm)
-         display(
-            heatmap(cm, 
-                fc = cgrad([:white,:dodgerblue4]),
-                xticks = (1:m,m),
-                xrot= 90,
-                size= (800, 800),
-                yticks = (1:m,m),
-                yflip=true))
-            display(
-            annotate!([(j, i) for i in 1:n for j in 1:m])
+        heatmap(
+            cm,
+            c= :bwr,
+            clim=(-1, 1),
+            xticks = (1:size(cm, 2), 1:size(cm, 2)),
+            xrot = 90,
+            size = (800, 800),
+            yticks = (1:size(cm, 1), 1:size(cm, 1)),
+            yflip = true,
+            aspect_ratio = 1
         )
-        
-        #file saving
         savefig(full_file_path)
     end
 end

@@ -20,11 +20,11 @@ file_path = "path/to/data.csv"
 load_data_matrix(file_path)
 ```
 """
-function load_data_matrix(file_path::String; normalize=true::Bool)::Matrix{Float64}
+function load_data_matrix(file_path::String; centralize=true::Bool)::Matrix{Float64}
     df = DataFrames.DataFrame(CSV.File(file_path;header=false))
     data = Matrix{Float64}(df)
-    if normalize
-        data .-= mean(data, dims=2)
+    if centralize
+        data .-= mean(data, dims=1)
     end
 
     return data
@@ -110,14 +110,14 @@ function windowed_correlation_matrix(m::Matrix{Float64},l::Int64)::Matrix{Float6
     for i in eachindex(rp)
         if i == 1
             cm = correlation_matrix(m[1:rp[1],:])
-            @show size(cm)
             wcm .+= cm
         else
-            cm = correlation_matrix(m[rp[i-1]:rp[i],:])
-            @show size(cm)
+            cm = correlation_matrix(m[rp[i-1]+1:rp[i],:])
             wcm .+= cm    
         end                 
     end
     
     return 1/div(size(m)[1],l) .* wcm
 end
+
+

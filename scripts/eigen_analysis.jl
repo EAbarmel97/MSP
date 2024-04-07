@@ -1,4 +1,10 @@
 using LinearAlgebra
+using Base.Threads
+using DataFrames
+using GLM 
+
+include("wcm.jl")
+
 """
     filter_singular_vals_array(m::Matrix{Float64}; atol=eps(Float64)::Float64)::Vector{Float64}
 
@@ -17,7 +23,7 @@ matrix = [1.0 2.0; 3.0 4.0]
 filter_singular_vals_array(matrix)
 ```
 """
-function filter_singular_vals_array(m::Matrix{Float64};atol=eps(Float64)::Float64)::Vector{Float64}
+function filter_singular_vals_array(m::Matrix{Float64}; atol=eps(Float64)::Float64)::Vector{Float64}
     singular_vals = svd(m).S  
     return filter(u -> u > atol, singular_vals)
 end
@@ -40,11 +46,57 @@ matrix = [1.0 2.0; 3.0 4.0]
 compute_eigvals(matrix)```
 """
 function compute_eigvals(m::Matrix{Float64}; drop_first=true::Bool)::Vector{Float64}
+    eigvals = Float64[]
     if drop_first 
-        return abs2.(filter_singular_vals_array(m))[2:end]
+        eigvals = abs2.(filter_singular_vals_array(m))[2:end] 
+    end
+
+    eigvals = abs2.(filter_singular_vals_array(m))
+    return eigvals
+end
+
+"""
+    compute_average_eigvals(m::Matrix{Float64}, l::Int64; drop_first=true::Bool)::Vector{Float64}
+
+Compute the average eigenvalues of a matrix `m` using a windowed approach.
+
+# Arguments
+- `m::Matrix{Float64}`: Input matrix.
+- `l::Int64`: Window size.
+- `drop_first::Bool=true`: Whether to drop the first eigenvalue.
+
+# Returns
+- `average_eigvals::Vector{Float64}`: Vector containing the average eigenvalues.
+
+# Example
+```julia
+matrix = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
+compute_average_eigvals(matrix, 2)```
+"""
+function compute_average_eigvals(m::Matrix{Float64},l::Int64; drop_first=true::Bool)::Vector{Float64}
+    rem = size(m)[1] % l
+    spectrum = zeros(size(m)[2])
+    if rem != 0
+        @warn "one of the $(size(m)[1]) sub matrices will be windowed with $rem observations"
     end
     
-    return abs2.(filter_singular_vals_array(m))
+    rp = row_partition(size(m)[1], l)
+    Threads.@threads for i in eachindex(rp)
+        if i == 1
+            singular_vals = svd(m[1:rp[1],:]).S
+            spectrum .+= abs2.(singular_vals)
+        
+        else
+            singular_vals = svd(m[rp[i-1]+1:rp[i],:]).S
+            spectrum .+= abs2.(singular_vals)
+        end
+    end
+    
+    if drop_first
+        return 1/(div(size(m)[1],l)*(l-1)) .* spectrum[2:end]
+    end
+
+    return 1/(div(size(m)[1],l)*(l-1)) .* spectrum
 end
 
 """
@@ -66,35 +118,8 @@ y_values = [0.1, 0.2, 0.3]
 intercept_and_exponent(x_values, y_values)```
 """
 function intercept_and_exponent(x::Vector{Float64},y::Vector{Float64})::Vector{Float64}
-    X = hcat(ones(length(x)),x)
-
-    return inv(X'*X)*(X'*y)
-end
-
-"""
-    intercept_and_exponent_from_log_eigenspectrum(n::Vector{Float64}, eigspectrum::Vector{Float64})::Vector{Float64}
-
-Compute the intercept and exponent from the logarithm of the eigenvalue spectrum and its corresponding indices.
-
-# Arguments
-- `n::Vector{Float64}`: Vector of indices.
-- `eigspectrum::Vector{Float64}`: Vector of eigenvalue spectrum values.
-
-# Returns
-- `params::Vector{Float64}`: Vector containing the intercept and exponent.
-
-# Example
-```julia
-indices = [1.0, 2.0, 3.0]
-eigenvalues = [0.1, 0.2, 0.3]
-intercept_and_exponent_from_log_eigenspectrum(indices, eigenvalues)```
-"""
-function intercept_and_exponent_from_log_eigenspectrum(n::Vector{Float64},eigspectrum::Vector{Float64})::Vector{Float64}
-    log10_n = log10.(n)
-    log10_eigspec = log10.(eigspectrum)
-    beta0, beta1 = intercept_and_exponent(log10_n,log10_eigspec)
-
-    return [beta0,beta1]
+   data = DataFrame(X=x,Y=y)
+   return GLM.coef(GLM.lm(@formula(Y ~ X), data))
 end
 
 """
@@ -114,5 +139,9 @@ eigenvalues = [0.1, 0.2, 0.3, 0.4]
 compute_linear_fit_params(eigenvalues)```
 """
 function compute_linear_fit_params(eigvals::Array{Float64,1})::Vector{Float64}
-    return intercept_and_exponent_from_log_eigenspectrum(collect(Float64,1:length(eigvals)),eigvals)
+    log10_n = log10.(collect(Float64,1:length(eigvals)))
+    log10_eigvals = log10.(eigvals)
+    beta0, beta1 = intercept_and_exponent(log10_n,log10_eigvals)
+    @show [beta0, beta1]
+    return [beta0, beta1]
 end
