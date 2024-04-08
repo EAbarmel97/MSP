@@ -1,9 +1,6 @@
 using Plots
 using LaTeXStrings
 
-include("eigen_analysis.jl")
-include("wcm.jl")
-
 """
     heatmap_plot(cm::Matrix{Float64}; dir_to_save="."::String)
 
@@ -17,8 +14,8 @@ Generate a heatmap plot of a correlation matrix and save it to a directory.
 ```julia
 heatmap_plot(correlation_matrix)```
 """
-function heatmap_plot(cm::Matrix{Float64}; dir_to_save="."::String)
-    full_file_path = joinpath(dir_to_save, "heatmap_plot.pdf")
+function heatmap_plot(cm::Matrix{Float64}, type::String; dir_to_save="."::String)
+    full_file_path = joinpath(dir_to_save, "heatmap_plot_$type.pdf")
     if !isfile(full_file_path)
         heatmap(
             cm,

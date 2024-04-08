@@ -24,7 +24,7 @@ filter_singular_vals_array(matrix)
 ```
 """
 function filter_singular_vals_array(m::Matrix{Float64}; atol=eps(Float64)::Float64)::Vector{Float64}
-    singular_vals = svd(m).S  
+    singular_vals = LinearAlgebra.svd(m).S  
     return filter(u -> u > atol, singular_vals)
 end
 
@@ -83,11 +83,11 @@ function compute_average_eigvals(m::Matrix{Float64},l::Int64; drop_first=true::B
     rp = row_partition(size(m)[1], l)
     Threads.@threads for i in eachindex(rp)
         if i == 1
-            singular_vals = svd(m[1:rp[1],:]).S
+            singular_vals = LinearAlgebra.svd(m[1:rp[1],:]).S
             spectrum .+= abs2.(singular_vals)
         
         else
-            singular_vals = svd(m[rp[i-1]+1:rp[i],:]).S
+            singular_vals = LinearAlgebra.svd(m[rp[i-1]+1:rp[i],:]).S
             spectrum .+= abs2.(singular_vals)
         end
     end
@@ -142,6 +142,6 @@ function compute_linear_fit_params(eigvals::Array{Float64,1})::Vector{Float64}
     log10_n = log10.(collect(Float64,1:length(eigvals)))
     log10_eigvals = log10.(eigvals)
     beta0, beta1 = intercept_and_exponent(log10_n,log10_eigvals)
-    @show [beta0, beta1]
+    #@show [beta0, beta1]
     return [beta0, beta1]
 end

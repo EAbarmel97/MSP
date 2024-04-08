@@ -1,34 +1,4 @@
-using LinearAlgebra
-using DataFrames, CSV
-using Plots 
 using Statistics
-"""
-    load_data_matrix(file_path::String; normalize=true::Bool)::Matrix{Float64}
-
-Load data from a CSV file into a matrix and optionally normalize it.
-
-# Arguments
-- `file_path::String`: Path to the CSV file.
-- `normalize::Bool=true`: Whether to normalize the data by subtracting the mean.
-
-# Returns
-- `data::Matrix{Float64}`: Loaded data matrix.
-
-# Example
-```julia
-file_path = "path/to/data.csv"
-load_data_matrix(file_path)
-```
-"""
-function load_data_matrix(file_path::String; centralize=true::Bool)::Matrix{Float64}
-    df = DataFrames.DataFrame(CSV.File(file_path;header=false))
-    data = Matrix{Float64}(df)
-    if centralize
-        data .-= mean(data, dims=1)
-    end
-
-    return data
-end
 
 """
     correlation_matrix(m::Matrix{Float64})::Matrix{Float64}
@@ -119,5 +89,3 @@ function windowed_correlation_matrix(m::Matrix{Float64},l::Int64)::Matrix{Float6
     
     return 1/div(size(m)[1],l) .* wcm
 end
-
-
