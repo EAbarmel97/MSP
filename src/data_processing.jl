@@ -1,5 +1,6 @@
 using DataFrames, CSV
 include("msp.jl")
+is_numeric(x) = tryparse(Float64, string(x)) !== nothing
 
 
 """
@@ -50,15 +51,18 @@ file_path = "path/to/data.csv"
 load_data_matrix(file_path)
 ```
 """
-function load_data_matrix(file_path::String; centralize=true::Bool)::Matrix{Float64}
-    df = DataFrames.DataFrame(CSV.File(file_path;header=false))
+function load_data_matrix(file_path::String; drop_header=false,centralize::Bool=true)::Matrix{Float64}
+    df = DataFrames.DataFrame(CSV.File(file_path; header=drop_header))
     data = Matrix{Float64}(df)
+
     if centralize
         data .-= mean(data, dims=1)
     end
 
     return data
 end
+
+
 
 """
     write_csv_by_fase(dir_to_fetch::String, fase::Int64)
@@ -79,23 +83,22 @@ function write_csv_by_fase(dir_to_fetch::String, fase::Int64,max_rows::Int)
 
     files = filter(file -> endswith(file, "fase$(fase).csv"), readdir(abspath(dir_to_fetch)))
     sizes = size(load_data_matrix(joinpath(dir_to_fetch,first(files))))
-    ensamble_matrix_by_fase = zeros(max_rows, sizes[2])
+    ensamble_matrix_by_fase = zeros(Float64,max_rows, sizes[2])
+    
     Threads.@threads for file in files
         m = load_data_matrix(joinpath(dir_to_fetch,file))
-        @show "size of file: $file, is $(size(m))"
         if size(m)[1] < max_rows
             m_embedded = embedd_matrix_in_row_space(m,max_rows)
-            @show size(m_embedded)
             ensamble_matrix_by_fase = m_embedded
         else
             m_reduced = m[1:max_rows,:]
-            @show size(m_reduced)
             ensamble_matrix_by_fase = m_reduced
         end        
         ensamble_matrix_by_fase .+= (1/length(files) .* ensamble_matrix_by_fase)
     end
+    @show isa( ensamble_matrix_by_fase, Matrix{Float64})
 
-    df_ensamble_by_fase = DataFrames.DataFrame(ensamble_matrix_by_fase,:auto)
+    df_ensamble_by_fase = DataFrames.DataFrame(ensamble_matrix_by_fase, :auto)
     CSV.write(joinpath(data_fases_dir,"fase$(fase).csv"),df_ensamble_by_fase)
 end
 
@@ -113,11 +116,7 @@ Generate heatmap and eigenvalue spectrum plots for a specific phase's data.
 ```julia
 heatmap_and_eigenspectra_plots_by_fase("path/to/csv/files", 1, 5)```
 """
-function heatmap_and_eigenspectra_plots_by_fase(dir_to_fetch::String, fase::Int64, l::Int64)
-    files = filter(file -> endswith(file, "fase$(fase).csv"), readdir(abspath(dir_to_fetch)))
-    sizes = size(load_data_matrix(joinpath(dir_to_fetch,first(files))))
-    ensamble_matrix_by_fase = zeros(sizes...)
-    
+function heatmap_and_eigenspectra_plots_by_fase(fase::Int64, l::Int64)
     #create heatmap/faseX dir. X=0,1,2
     heatmap_dir = joinpath("heatmap","fase$(fase)")
     mkpath(heatmap_dir)
@@ -126,10 +125,10 @@ function heatmap_and_eigenspectra_plots_by_fase(dir_to_fetch::String, fase::Int6
     eigspectrum_dir = joinpath("eigspectrum","fase$(fase)")
     mkpath(eigspectrum_dir)
     
-    ensamble_matrix_by_fase = load_data_matrix("data/fases/fase$(fase).csv")
+    ensamble_matrix_by_fase = load_data_matrix("/home/enki/MSP/data/fases/fase$(fase).csv",drop_header=true)
     
     heatmap_plot(ensamble_matrix_by_fase,"fase$fase"; dir_to_save=abspath(heatmap_dir))
-    plot_eigen_spectrum(ensamble_matrix_by_fase,l,"fase$fase"; dir_to_save=abspath(eigspectrum_dir))   
+    plot_eigen_spectrum(ensamble_matrix_by_fase,l,"fase$fase"; dir_to_save=abspath(eigspectrum_dir))
 end
 
 """
@@ -150,4 +149,4 @@ function heatmaps_matrix_fase_differences()
    heatmap_plot(m2-m1,"fase21"; dir_to_save=abspath("heatmap"))
    heatmap_plot(m3-m2,"fase32"; dir_to_save=abspath("heatmap"))
    heatmap_plot(m3-m1,"fase31"; dir_to_save=abspath("heatmap"))
-end  
+end

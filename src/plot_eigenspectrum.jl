@@ -77,12 +77,13 @@ function plot_eigen_spectrum(m::Matrix{Float64}, l::Int64, type::String; dir_to_
         y_vals = exp10.(params[1] .+ params[2] .* log10.(x_vals))
         plot!(x_vals, y_vals, label="Linear Fit: beta = $(round(params[2], digits=3)), A = $(round(exp10(params[1]),digits=3))", lc=:red)
 
-        for i in eachindex(rp)
+        Threads.@threads for i in eachindex(rp)
             if i == 1
+                ev = 1/(l -1) .* abs2.(LinearAlgebra.svd(m[1:rp[1],:]).S)
                 ev = compute_eigvals(m[1:rp[1],:])
                 plot!(collect(1:length(ev)), ev, xscale=:log10, yscale=:log10, alpha=0.2, lc=:grey, label="")
             else
-                ev = compute_eigvals(m[rp[i-1]+1:rp[i],:])
+                ev = 1/(l - 1) .* abs2.(LinearAlgebra.svd(m[rp[i-1]+1:rp[i],:]).S)
                 plot!(collect(1:length(ev)), ev, xscale=:log10, yscale=:log10, alpha=0.2, lc=:grey, label="")
             end
         end
